@@ -79,6 +79,14 @@ Item {
     property int dragSourceIndex: -1
     property int dragTargetIndex: -1
 
+    // Dragging a dock icon (launcher reordering) is a drag source too: report it so no surface
+    // hosting a drag is torn down mid-gesture, which crashes plasmashell on Wayland.
+    onIsDraggingChanged: {
+        if (typeof kicker !== "undefined" && kicker && typeof kicker.setDragInProgress === "function") {
+            kicker.setDragInProgress(isDragging);
+        }
+    }
+
     readonly property int launcherCount: {
         if (!mainDockRoot.tasksModel || !mainDockRoot.tasksModel.launcherList) return 0;
         return mainDockRoot.tasksModel.launcherList.length;

@@ -165,6 +165,26 @@ PlasmoidItem {
         Drag.dragType: Drag.Automatic
     }
 
+    // A drag must not outlive the window that owns its source: destroying that surface while
+    // the gesture is in flight crashes plasmashell on Wayland (KDE bugs 449426 / 488515).
+    // Every drag started in this dock reports here, so the popups that host drag sources stay
+    // alive until the gesture ends, whatever the starting point.
+    property bool dragInProgress: false
+
+    function setDragInProgress(active) {
+        const wasActive = dragInProgress;
+        dragInProgress = active;
+
+        if (launcherPopup && typeof launcherPopup.dragInProgress !== "undefined") {
+            launcherPopup.dragInProgress = active;
+        }
+
+        // The launcher popup was only kept open for the gesture; close it once it is over.
+        if (!active && wasActive && launcherPopup && launcherPopup.visible) {
+            launcherPopup.closeAnimated();
+        }
+    }
+
     preferredRepresentation: compactRepresentation
 
     compactRepresentation: CompactRepresentation {

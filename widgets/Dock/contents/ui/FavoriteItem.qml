@@ -112,14 +112,8 @@ Item {
     // close and destroy the window hosting the drag source: on Wayland that crashes
     // plasmashell (KDE bug 449426/488515). Keep it alive while dragging, then close it the way
     // hideOnWindowDeactivate would have once the gesture ends.
-    var launcher = (typeof kicker !== "undefined" && kicker) ? kicker.launcherPopup : null;
-    if (launcher) {
-      if (handler.active) {
-        launcher.dragInProgress = true;
-      } else if (launcher.dragInProgress) {
-        launcher.dragInProgress = false;
-        launcher.closeAnimated();
-      }
+    if (typeof kicker !== "undefined" && kicker && typeof kicker.setDragInProgress === "function") {
+      kicker.setDragInProgress(handler.active);
     }
 
     if (!handler.active) {

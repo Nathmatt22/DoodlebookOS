@@ -39,6 +39,20 @@ Item {
     return "";
   }
 
+  // URL handed to the compositor when dragging an item out of the launcher. The desktop
+  // containment links local file URLs, while favoriteId ("applications:foo.desktop") is a
+  // launcher-internal identifier it cannot resolve, so a drag built from that does nothing.
+  readonly property string dragUri: {
+    if (typeof model === "undefined" || !model) return "";
+    const entryPath = ("entryPath" in model && model.entryPath) ? model.entryPath.toString() : "";
+    const rawUrl = ("url" in model && model.url) ? model.url.toString() : "";
+    const candidate = entryPath.length > 0 ? entryPath : rawUrl;
+    if (candidate.length === 0) return "";
+    if (candidate.includes("://")) return candidate;
+    if (candidate.includes(":")) return "";
+    return "file://" + candidate;
+  }
+
   readonly property bool isPinnedToDock: {
     if (!favItem.launcherUrlStr) return false;
     if (typeof kicker !== "undefined" && kicker.tasksModel && kicker.tasksModel.launcherList) {
@@ -128,11 +142,15 @@ Item {
       }
       kicker.dragSource.sourceItem = favItem;
       kicker.dragSource.Drag.imageSource = result.url;
-      // Qt serializes this to the compositor; a QUrl object instead of a string can break
-      // the Wayland data transfer, so normalize it.
-      var dragUrl = (favItem.launcherUrlStr || favItem.url || "").toString();
+      // The desktop needs a real file URL it can link to; a launcher favoriteId is useless
+      // to it, and a drag without a usable URL must not start at all.
+      const dragUri = favItem.dragUri;
+      if (dragUri.length === 0) {
+        kicker.dragSource.Drag.active = false;
+        return;
+      }
       kicker.dragSource.Drag.mimeData = {
-        "text/uri-list" : [dragUrl]
+        "text/uri-list" : [dragUri]
       };
       kicker.dragSource.Drag.active = handler.active;
     });

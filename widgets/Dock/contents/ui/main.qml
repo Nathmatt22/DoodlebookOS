@@ -162,7 +162,10 @@ PlasmoidItem {
     readonly property Item dragSource: Item {
         id: dragSource
         property Item sourceItem
+
         Drag.dragType: Drag.Automatic
+        // Let the desktop link the dragged .desktop file instead of only copying it.
+        Drag.supportedActions: Qt.CopyAction | Qt.LinkAction
     }
 
     // A drag must not outlive the window that owns its source: destroying that surface while

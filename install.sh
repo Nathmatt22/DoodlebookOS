@@ -93,6 +93,11 @@ if [[ "$need_packages" -eq 1 ]]; then
             libkf6style-dev libkf6svg-dev libkf6colorscheme-dev kirigami-addons-dev
             libkdecorations3-dev
             plasma-desktop plasma-workspace kwin-wayland kpackagetool6
+            plasma-nm plasma-pa powerdevil systemsettings kdeconnect
+            qml6-module-org-kde-bluezqt qml6-module-org-kde-kdeconnect
+            qml6-module-org-kde-kitemmodels qml6-module-org-kde-kcmutils
+            qml6-module-org-kde-layershell qml6-module-org-kde-pipewire
+            qml6-module-org-kde-kirigamiaddons-components
             qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts
             qml6-module-qtquick-window qml6-module-qtquick-shapes qml6-module-qtquick-effects
             qml6-module-qtqml-workerscript
@@ -149,6 +154,15 @@ fi
 
 if [[ "${DOODLEBOOK_PREP_ONLY:-0}" == "1" ]]; then
     exit 0
+fi
+
+# Warn when the installed Plasma is older than the release this suite targets (6.8.2+).
+# The QML falls back to compatibility mode there, so this is informational only.
+if command -v plasmashell &>/dev/null; then
+    plasma_ver="$(plasmashell --version 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1)"
+    if [[ -n "$plasma_ver" && "$(printf '%s\n6.8.2\n' "$plasma_ver" | sort -V | head -n1)" != "6.8.2" ]]; then
+        echo "[i] KDE Plasma $plasma_ver detected: the suite runs in compatibility mode (features added in Plasma 6.8 stay disabled)."
+    fi
 fi
 
 exec python3 "$SCRIPT_DIR/installer/installer.py" --cli "$@"

@@ -10,7 +10,6 @@ import org.kde.kitemmodels as KItemModels
 import org.kde.bluezqt as BluezQt
 import org.kde.kcmutils as KCMUtils
 import org.kde.plasma.networkmanagement as PlasmaNM
-import org.kde.plasma.workspace.dbus as DBus
 import org.kde.plasma.plasma5support as Plasma5Support
 import QtQuick.Effects
 import org.kde.plasma.private.sessions as Sessions
@@ -390,19 +389,21 @@ PlasmaExtras.Representation {
         }
     }
 
-    DBus.Properties {
+    // DBus.Properties only exists in Plasma 6.8+. The Night Light reader lives in its own
+    // file so that Plasma 6.3 (Debian 13) hides that readout instead of breaking the panel;
+    // the fallback values keep every nightLightControl.* call site unchanged.
+    Loader {
         id: nightLightControl
-        busType: DBus.BusType.Session
-        service: "org.kde.KWin.NightLight"
-        path: "/org/kde/KWin/NightLight"
-        iface: "org.kde.KWin.NightLight"
 
-        readonly property bool available: Boolean(properties.available)
-        readonly property bool running: Boolean(properties.running)
-        readonly property bool inhibited: Boolean(properties.inhibited)
-        readonly property bool daylight: Boolean(properties.daylight)
-        readonly property int currentTemperature: Number(properties.currentTemperature)
-        readonly property int targetTemperature: Number(properties.targetTemperature)
+        source: "NightLightControl.qml"
+        asynchronous: false
+
+        readonly property bool available: item ? item.available : false
+        readonly property bool running: item ? item.running : false
+        readonly property bool inhibited: item ? item.inhibited : false
+        readonly property bool daylight: item ? item.daylight : true
+        readonly property int currentTemperature: item ? item.currentTemperature : 0
+        readonly property int targetTemperature: item ? item.targetTemperature : 0
     }
 
     PlasmaNM.Handler {

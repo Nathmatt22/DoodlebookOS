@@ -34,7 +34,10 @@ PlasmoidItem {
         property bool initialized: false
 
         virtualDesktop: virtualDesktopInfo.currentDesktop
-        filterByCurrentVirtualDesktop: false
+        // filterByCurrentVirtualDesktop only exists in Plasma 6.8+; filterByVirtualDesktop is
+        // the equivalent flag present in every supported release. The 6.8-only one is applied
+        // in Component.onCompleted below, after a typeof check, so 6.3 keeps loading.
+        filterByVirtualDesktop: false
         filterByScreen: false
         filterByActivity: false
         sortMode: TaskManager.TasksModel.SortManual
@@ -56,6 +59,10 @@ PlasmoidItem {
         }
 
         Component.onCompleted: {
+            if (typeof filterByCurrentVirtualDesktop !== "undefined") {
+                filterByCurrentVirtualDesktop = false;
+            }
+
             var raw = Plasmoid.configuration.launchers;
             var list = [];
             if (raw) {

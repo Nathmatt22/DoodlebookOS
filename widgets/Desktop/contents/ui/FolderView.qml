@@ -108,6 +108,16 @@ FocusScope {
         }
     }
 
+    // Binding instead of a declarative assignment: an unknown property in a Binding is only
+    // a runtime warning, so Plasma versions without Positioner.optimalStripes keep loading.
+    Binding {
+        target: positioner
+        property: "optimalStripes"
+        value: Math.floor((gridView.flow === GridView.FlowLeftToRight)
+            ? (gridView.height / gridView.cellHeight)
+            : (gridView.width / gridView.cellWidth))
+    }
+
     function positionViewAtBeginning() {
         gridView.positionViewAtBeginning();
     }
@@ -1387,9 +1397,9 @@ FocusScope {
 
             folderModel: dir
 
-            optimalStripes: Math.floor((gridView.flow === GridView.FlowLeftToRight)
-                ? (gridView.height / gridView.cellHeight)
-                : (gridView.width / gridView.cellWidth))
+            // Folder.Positioner.optimalStripes only exists in Plasma 6.8+. A declarative
+            // assignment makes this whole file fail to load on older Plasma (Debian 13 ships
+            // 6.3.6), so it is applied through the Binding declared next to the root instead.
             perStripe: Math.floor((gridView.flow === GridView.FlowLeftToRight)
                 ? (gridView.width / gridView.cellWidth)
                 : (gridView.height / gridView.cellHeight))

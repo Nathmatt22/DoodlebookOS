@@ -176,16 +176,30 @@ PlasmoidItem {
         panelHeight: kicker.compactRepItem ? kicker.compactRepItem.effectiveHeight : 52
     }
 
-    DimOverlay {
+    // DimOverlay imports org.kde.layershell, which Debian ships as a separate package
+    // (qml6-module-org-kde-layershell). If it is missing, the Loader keeps the dock alive
+    // instead of failing the whole file; LauncherPopup already ignores a null overlay
+    // because every call site checks typeof showOverlay === "function".
+    Loader {
         id: dimOverlay
-        bottomGap: kicker.compactRepItem ? kicker.compactRepItem.effectiveHeight : 52
+
+        source: "DimOverlay.qml"
+        asynchronous: false
+
+        readonly property real overlayBottomGap: kicker.compactRepItem ? kicker.compactRepItem.effectiveHeight : 52
+
+        onLoaded: {
+            if (item) {
+                item.bottomGap = Qt.binding(() => overlayBottomGap);
+            }
+        }
     }
 
     LauncherPopup {
         id: launcherPopup
         rootModel: rootModel
         plasmoidConfiguration: Plasmoid.configuration
-        dimOverlayItem: dimOverlay
+        dimOverlayItem: dimOverlay.item
         visualParentItem: (kicker.compactRepItem && kicker.compactRepItem.popupAnchor) ? kicker.compactRepItem.popupAnchor : kicker.compactRepItem
         popupWidth: Math.min(Screen.width - 40, (Plasmoid.configuration.popupWidth || 680))
         popupHeight: Math.round(Screen.height * 0.66)

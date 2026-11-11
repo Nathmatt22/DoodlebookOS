@@ -28,6 +28,43 @@ if [[ ! -d "/usr/lib64/cmake/KF6Style" && ! -d "/usr/lib/cmake/KF6Style" && ! -d
     need_packages=1
 fi
 
+# The widgets import KDE QML modules that Debian splits into separate packages and that the
+# -dev packages above do not pull in. Check them every run: on an already prepared system the
+# build-tool checks above all pass, yet a module added by a newer release would stay missing.
+QML_ROOTS=(
+    "/usr/lib/x86_64-linux-gnu/qt6/qml"
+    "/usr/lib/aarch64-linux-gnu/qt6/qml"
+    "/usr/lib64/qt6/qml"
+    "/usr/lib/qt6/qml"
+)
+for module in \
+    org/kde/ksvg \
+    org/kde/draganddrop \
+    org/kde/kquickcontrolsaddons \
+    org/kde/plasma/plasma5support \
+    org/kde/layershell \
+    org/kde/pipewire \
+    org/kde/taskmanager \
+    org/kde/plasma/private/kicker \
+    org/kde/plasma/private/volume \
+    org/kde/plasma/networkmanagement \
+    org/kde/bluezqt \
+    org/kde/kitemmodels \
+    org/kde/kcmutils \
+    org/kde/kdeconnect; do
+    module_found=0
+    for qml_root in "${QML_ROOTS[@]}"; do
+        if [[ -d "$qml_root/$module" ]]; then
+            module_found=1
+            break
+        fi
+    done
+    if [[ "$module_found" -eq 0 ]]; then
+        need_packages=1
+        break
+    fi
+done
+
 # Find system Klipper QML directory across distros
 KLIPPER_DIR=""
 for cand in \

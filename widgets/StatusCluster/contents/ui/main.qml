@@ -269,12 +269,20 @@ PlasmoidItem {
         showJobs: notifSettings.jobsInNotifications
         sortMode: NotificationManager.Notifications.SortByTypeAndUrgency
         groupMode: NotificationManager.Notifications.GroupDisabled
-        ignoreBlacklistDuringInhibition: true
         blacklistedDesktopEntries: notifSettings.historyBlacklistedApplications
         blacklistedNotifyRcNames: notifSettings.historyBlacklistedServices
         urgencies: NotificationManager.Notifications.CriticalUrgency
                  | NotificationManager.Notifications.NormalUrgency
                  | NotificationManager.Notifications.LowUrgency
+    }
+
+    // ignoreBlacklistDuringInhibition only exists in Plasma 6.8+. Declaring it here makes the
+    // whole widget fail to load on older releases, so it is applied through a Binding, which
+    // is ignored (only warning) where the property does not exist.
+    Binding {
+        target: notifHistoryModel
+        property: "ignoreBlacklistDuringInhibition"
+        value: true
     }
 
     readonly property var plasmoidRef: Plasmoid

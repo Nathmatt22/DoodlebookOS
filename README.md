@@ -110,7 +110,7 @@ Before any panel layout or theme configuration is altered, the installer creates
 ```text
 ~/.config/doodlebookos-backups/latest
 ```
-You can restore your original desktop configuration at any time by running `./uninstall.sh`.
+You can restore your original desktop configuration at any time by running `cd ~/DoodlebookOS && ./uninstall.sh`.
 
 ---
 
@@ -141,12 +141,12 @@ You can restore your original desktop configuration at any time by running `./un
 
 ### 1. Graphical Setup Wizard (Recommended)
 
-Clone the repository and run the guided OOBE installer:
+Clone the repository and run the guided OOBE installer (paste the whole block at once):
 
 ```bash
-git clone https://github.com/PanOptikuum/DoodlebookOS.git
+git clone https://github.com/Nathmatt22/DoodlebookOS.git
 cd DoodlebookOS
-chmod +x install-gui.sh
+chmod +x install-gui.sh install.sh uninstall.sh
 ./install-gui.sh
 ```
 
@@ -157,11 +157,24 @@ Alternatively, double-click `DoodlebookOS-Installer.desktop` in your file manage
 For headless or automated installations:
 
 ```bash
-git clone https://github.com/PanOptikuum/DoodlebookOS.git
+git clone https://github.com/Nathmatt22/DoodlebookOS.git
 cd DoodlebookOS
 chmod +x install.sh
 ./install.sh
 ```
+
+### 3. Updating an Existing Installation
+
+Already cloned the repository? Pull the latest changes and re-run the installer. Your pinned dock apps, desktop widgets and backup are preserved:
+
+```bash
+cd ~/DoodlebookOS
+git pull
+chmod +x install.sh install-gui.sh uninstall.sh
+./install.sh
+```
+
+> On Debian/Ubuntu, `install.sh` runs `sudo` itself to install the KDE/Qt build and QML packages; run it from your normal user account, not as root.
 
 ---
 
@@ -182,7 +195,7 @@ You can toggle between Dark and Light mode at any time using the Quick Settings 
 To completely remove DoodlebookOS and restore your previous KDE Plasma panels, themes, and configuration:
 
 ```bash
-./uninstall.sh
+cd ~/DoodlebookOS && ./uninstall.sh
 ```
 
 The uninstaller will:
@@ -194,14 +207,29 @@ The uninstaller will:
 
 ### Recovering a failed desktop load
 
-If Plasma reports **“an error occurred while loading DoodlebookOS Desktop”**, the desktop containment override could not be loaded by the installed Plasma version. From a terminal, drop the override and restart the shell:
+If Plasma reports **“an error occurred while loading DoodlebookOS Desktop”**, the desktop containment override could not be loaded by the installed Plasma version. Drop the override and restart the shell from a terminal (Konsole), one line at a time:
 
 ```bash
-rm -rf ~/.local/share/plasma/plasmoids/{org.kde.desktopcontainment,org.kde.plasma.folder,DoodlebookOS-Desktop}
+rm -rf ~/.local/share/plasma/plasmoids/org.kde.desktopcontainment ~/.local/share/plasma/plasmoids/org.kde.plasma.folder ~/.local/share/plasma/plasmoids/DoodlebookOS-Desktop
+```
+
+```bash
 systemctl --user restart plasma-plasmashell
 ```
 
-Your panels, widgets and settings are untouched; run `./install.sh` again after updating the repository, or `./uninstall.sh` to go back to your previous configuration.
+If the desktop stays empty, start the shell manually instead:
+
+```bash
+plasmashell --replace >/dev/null 2>&1 &
+```
+
+Your panels, widgets and settings are untouched. Then update and reinstall:
+
+```bash
+cd ~/DoodlebookOS && git pull && chmod +x install.sh && ./install.sh
+```
+
+To go back to your previous configuration instead, run `cd ~/DoodlebookOS && ./uninstall.sh`.
 
 ---
 

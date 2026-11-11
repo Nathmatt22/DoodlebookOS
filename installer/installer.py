@@ -614,6 +614,38 @@ class InstallWorker(QThread):
                 except Exception:
                     pass
 
+            def plasma_qml_module_exists(module_uri: str) -> bool:
+                rel = module_uri.replace(".", "/")
+                for qml_root in (
+                    Path("/usr/lib/x86_64-linux-gnu/qt6/qml"),
+                    Path("/usr/lib/aarch64-linux-gnu/qt6/qml"),
+                    Path("/usr/lib64/qt6/qml"),
+                    Path("/usr/lib/qt6/qml"),
+                ):
+                    if (qml_root / rel).is_dir():
+                        return True
+                return False
+
+            def adapt_notifications_import(dest_p: Path):
+                """Plasma 6.6 turned the notifications applet into a real QML module; older
+                releases register NotificationWindow under a private URI instead. QML has
+                no conditional imports, so pick the one matching the running Plasma."""
+                if dest_p.is_symlink():
+                    return
+                qml_file = dest_p / "contents" / "ui" / "notifications" / "NotificationPopup.qml"
+                if not qml_file.is_file():
+                    return
+                modern = "import plasma.applet.org.kde.plasma.notifications as NotificationsApplet"
+                legacy = "import org.kde.plasma.private.notifications as NotificationsApplet"
+                text = qml_file.read_text(encoding="utf-8")
+                if plasma_qml_module_exists("plasma.applet.org.kde.plasma.notifications"):
+                    old, new = legacy, modern
+                else:
+                    old, new = modern, legacy
+                if old in text:
+                    qml_file.write_text(text.replace(old, new), encoding="utf-8")
+                    self.log(f"[i] Notifications popup: import adapted to {new.split()[1]}")
+
             def copy_plasmoid_if_not_symlink(src_p: Path, dst_p: Path):
                 if dst_p.is_symlink() and dst_p.resolve().exists():
                     self.log(f"[i] Keeping existing symlinked widget: {dst_p}")
@@ -635,6 +667,7 @@ class InstallWorker(QThread):
                 self.repo_dir / "widgets" / "StatusCluster",
                 plasmoids_dir / "org.doodlebookos.statuscluster",
             )
+            adapt_notifications_import(plasmoids_dir / "org.doodlebookos.statuscluster")
             create_alias_symlink(plasmoids_dir / "DoodlebookOS-StatusCluster", plasmoids_dir / "org.doodlebookos.statuscluster")
 
             copy_plasmoid_if_not_symlink(

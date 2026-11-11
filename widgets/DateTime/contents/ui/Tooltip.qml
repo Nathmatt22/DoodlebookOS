@@ -13,7 +13,6 @@ import QtQuick.Layouts
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.plasma.plasmoid
 import org.kde.kirigami as Kirigami
-import org.kde.plasma.clock
 import org.kde.plasma.private.digitalclock
 import "i18n.js" as I18n
 
@@ -149,7 +148,7 @@ Rectangle {
                         case 0: // Code
                             return tzClock.timeZoneCode;
                         case 1: // City
-                            return TimeZonesI18n.i18nCity(tzClock.timeZone);
+                            return TimeZonesI18n.i18nCity(tzClock.resolvedTimeZone);
                         case 2: // Offset from UTC time
                             return tzClock.timeZoneOffset;
                         }
@@ -168,7 +167,7 @@ Rectangle {
 
                     textFormat: Text.PlainText
 
-                    font.weight: tzClock.timeZone == root.currentTimeZone ? Font.Bold : Font.Normal
+                    font.weight: tzClock.resolvedTimeZone == root.currentTimeZone ? Font.Bold : Font.Normal
                     font.features: {
                         if (index % 2 === 1) {
                             return { "tnum": 1 }
@@ -185,7 +184,10 @@ Rectangle {
         PlasmaComponents.Label {
             Layout.maximumWidth: toolTipContentItem.maximumTextWidth
             visible: ApplicationIntegration.calendarInstalled
-            text: i18nc("@info:tooltip %1 is the name of a calendar application", "Middle-click to open %1", ApplicationIntegration.calendarApplicationName)
+            // ApplicationIntegration.calendarApplicationName only exists from Plasma 6.8 on.
+            text: ApplicationIntegration.calendarApplicationName !== undefined
+                ? i18nc("@info:tooltip %1 is the name of a calendar application", "Middle-click to open %1", ApplicationIntegration.calendarApplicationName)
+                : i18nc("@info:tooltip", "Middle-click to open the calendar")
             textFormat: Text.PlainText
             opacity: 0.75
             wrapMode: Text.Wrap

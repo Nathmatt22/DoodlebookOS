@@ -11,7 +11,6 @@ import QtQuick.Window
 import QtQml
 
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.clock
 import org.kde.kirigami as Kirigami
 
 import org.kde.notificationmanager as NotificationManager

@@ -14,8 +14,8 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.private.digitalclock
+import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
-import org.kde.plasma.clock
 
 PlasmoidItem {
     id: root
@@ -45,7 +45,7 @@ PlasmoidItem {
 
     readonly property string dateFormatString: setDateFormatString()
     readonly property var currentTime: currentClock.dateTime
-    readonly property string currentTimeZone: currentClock.timeZone
+    readonly property string currentTimeZone: currentClock.resolvedTimeZone
 
     Clock {
         id: currentClock
@@ -55,6 +55,23 @@ PlasmoidItem {
     Clock {
         id: systemClock
         // not defining a timezone keeps it up to date with the system timezone
+    }
+
+    // org.kde.plasma.clock (Plasma 6.6+) also provides TimeZoneUtils; sorting the tooltip
+    // list by the current UTC offset only needs the time engine, present in every version.
+    P5Support.DataSource {
+        id: timeZoneDataSource
+        engine: "time"
+        connectedSources: root.allTimeZones
+        interval: 60000
+    }
+
+    function sortedTimeZones(timeZones) {
+        const offsetOf = timeZone => {
+            const data = timeZoneDataSource.data ? timeZoneDataSource.data[timeZone] : undefined;
+            return data && typeof data["Offset"] === "number" ? data["Offset"] : 0;
+        };
+        return timeZones.slice().sort((a, b) => offsetOf(a) - offsetOf(b));
     }
 
     function initTimeZones() {
@@ -123,9 +140,9 @@ PlasmoidItem {
          * this, let's suppress the duplicate.
          */
         const isLiterallyLocalOrResolvesToSomethingOtherThanLocal = timeZone =>
-            timeZone == "Local" || timeZone != systemClock.timeZone
+            timeZone == "Local" || timeZone != systemClock.resolvedTimeZone
 
-        return TimeZoneUtils.sortedTimeZones(Plasmoid.configuration.selectedTimeZones
+        return sortedTimeZones(Plasmoid.configuration.selectedTimeZones
             .filter(isLiterallyLocalOrResolvesToSomethingOtherThanLocal));
     }
 

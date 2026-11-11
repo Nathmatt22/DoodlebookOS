@@ -16,8 +16,8 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.private.digitalclock
+import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
-import org.kde.plasma.clock
 import org.kde.taskmanager as TaskManager
 
 MouseArea {
@@ -107,11 +107,31 @@ MouseArea {
         onTimeZoneChanged: main.setupLabels()
     }
 
+    // TimeZoneUtils came with org.kde.plasma.clock (Plasma 6.6+); the time engine exposes the
+    // offsets needed to order the configured zones the same way, on every Plasma version.
+    P5Support.DataSource {
+        id: timeZoneDataSource
+        engine: "time"
+        connectedSources: Plasmoid.configuration.selectedTimeZones
+        interval: 60000
+    }
+
+    function sortedTimeZones(timeZones) {
+        const offsetOf = timeZone => {
+            const data = timeZoneDataSource.data ? timeZoneDataSource.data[timeZone] : undefined;
+            return data && typeof data["Offset"] === "number" ? data["Offset"] : 0;
+        };
+        return timeZones.slice().sort((a, b) => offsetOf(a) - offsetOf(b));
+    }
+
     Connections {
         target: Plasmoid
         function onContextualActionsAboutToShow() {
             ClipboardMenu.secondsIncluded = (Plasmoid.configuration.showSeconds === 2);
-            ClipboardMenu.timezone = clock.timeZone;
+            // ClipboardMenu.timezone only exists from Plasma 6.8 on.
+            if (typeof ClipboardMenu.timezone !== "undefined") {
+                ClipboardMenu.timezone = clock.resolvedTimeZone;
+            }
         }
     }
 
@@ -541,7 +561,7 @@ MouseArea {
     }
 
     Component.onCompleted: {
-        Plasmoid.configuration.selectedTimeZones = TimeZoneUtils.sortedTimeZones(Plasmoid.configuration.selectedTimeZones);
+        Plasmoid.configuration.selectedTimeZones = sortedTimeZones(Plasmoid.configuration.selectedTimeZones);
 
         setTimeZoneIndex();
         dateTimeChanged();

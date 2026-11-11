@@ -64,11 +64,27 @@ FocusScope {
     property var history: []
     property var lastPosition: null
     property bool goingBack: false
-    readonly property bool krunnerAvailable: Folder.KRunnerChecker.krunnerAvailable
+    // Folder.KRunnerChecker is only registered by Plasma 6.4 and newer. Referring to that
+    // type directly makes this whole file fail to load on older Plasma releases (Debian 13
+    // ships Plasma 6.3.6), which takes the entire desktop containment down with it, so the
+    // check is created at runtime and silently disabled when the type is not available.
+    property var krunnerProbe: null
+    readonly property bool krunnerAvailable: krunnerProbe ? krunnerProbe.krunnerAvailable : false
     readonly property BackButtonItem backButton: backButtonLoader.item as BackButtonItem
     property var dialog: null
     property RenameEditor editor: null
     property string searchString: ""
+
+    Component.onCompleted: {
+        try {
+            krunnerProbe = Qt.createQmlObject("import QtQuick\n"
+                + "import org.kde.private.desktopcontainment.folder as Folder\n"
+                + "Item { property bool krunnerAvailable: Folder.KRunnerChecker.krunnerAvailable }", main);
+        } catch (e) {
+            // Plasma < 6.4: no KRunner probe available, keep type-ahead search off.
+            krunnerProbe = null;
+        }
+    }
 
     function positionViewAtBeginning() {
         gridView.positionViewAtBeginning();

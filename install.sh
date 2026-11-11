@@ -76,16 +76,39 @@ if [[ "$need_packages" -eq 1 ]]; then
             kcoreaddons kconfig kwindowsystem kguiaddons ki18n kiconthemes \
             kconfigwidgets kcmutils frameworkintegration kcolorscheme kirigami kdecoration || true
     elif command -v apt-get &>/dev/null; then
-        apt-get update && apt-get install -y \
-            python3 python3-pil python3-dbus python3-gi \
-            python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtqml \
-            python3-pyside6.qtquick python3-pyside6.qtdbus \
-            cmake ninja-build g++ extra-cmake-modules pkg-config \
-            qt6-base-dev qt6-base-private-dev qt6-declarative-dev libqt6svg6-dev \
-            libkf6coreaddons-dev libkf6config-dev libkf6windowsystem-dev libkf6guiaddons-dev \
-            libkf6i18n-dev libkf6iconthemes-dev libkf6configwidgets-dev libkf6kcmutils-dev \
-            libkf6style-dev libkf6colorscheme-dev kirigami-addons-dev || true
-        apt-get install -y libkdecoration3-dev 2>/dev/null || apt-get install -y libkdecoration-dev 2>/dev/null || true
+        # Debian/Ubuntu ship every KDE QML module and every KF6 component as its own
+        # package, so ask for the complete set and silently skip names this release
+        # does not provide (package names differ between Debian stable, testing and
+        # Ubuntu, and an unknown name aborts the whole apt-get transaction).
+        apt-get update || true
+        APT_WANTED="
+            python3 python3-pil python3-dbus python3-gi
+            python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtqml
+            python3-pyside6.qtquick python3-pyside6.qtdbus python3-pyside6.qtsvg
+            cmake ninja-build g++ extra-cmake-modules pkg-config
+            qt6-base-dev qt6-base-private-dev qt6-declarative-dev qt6-declarative-dev-tools
+            libqt6svg6-dev
+            libkf6coreaddons-dev libkf6config-dev libkf6configwidgets-dev libkf6windowsystem-dev
+            libkf6guiaddons-dev libkf6i18n-dev libkf6iconthemes-dev libkf6kcmutils-dev
+            libkf6style-dev libkf6svg-dev libkf6colorscheme-dev kirigami-addons-dev
+            libkdecorations3-dev
+            plasma-desktop plasma-workspace kwin-wayland kpackagetool6
+            qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts
+            qml6-module-qtquick-window qml6-module-qtquick-shapes qml6-module-qtquick-effects
+            qml6-module-qtqml-workerscript
+            qml6-module-org-kde-kirigami qml6-module-org-kde-ksvg qml6-module-org-kde-config
+            qml6-module-org-kde-draganddrop qml6-module-org-kde-kquickcontrolsaddons
+            qml6-module-org-kde-qqc2desktopstyle qml6-module-org-kde-plasma-plasma5support
+        "
+        APT_AVAILABLE=""
+        for pkg in \$APT_WANTED; do
+            if apt-cache show "\$pkg" >/dev/null 2>&1; then
+                APT_AVAILABLE="\$APT_AVAILABLE \$pkg"
+            fi
+        done
+        if [[ -n "\$APT_AVAILABLE" ]]; then
+            apt-get install -y \$APT_AVAILABLE || true
+        fi
     elif command -v zypper &>/dev/null; then
         zypper install -y python3 python3-pyside6 python3-Pillow python3-dbus-python python3-gobject \
             cmake ninja gcc-c++ extra-cmake-modules \

@@ -73,6 +73,9 @@
 | **Other Distros (Experimental)** | **Arch Linux**, **openSUSE Tumbleweed**, **KDE neon / Kubuntu 26.10+** | Community testing tier; requires up-to-date Qt6/KF6 packages and may need manual dependency resolution. |
 | **Virtual Machines (VM)** | **3D Acceleration Required (`VirtIO-GPU` / `VirGL`)** | Required when testing in QEMU/KVM, Boxes, or VirtualBox for KWin Wayland compositing and real-time top bar luminance sampling. |
 
+> [!NOTE]
+> **Debian 13 (trixie) and other Plasma 6.0–6.7 systems:** Debian 13 ships KDE Plasma 6.3.6 with Qt 6.8 and KDE Frameworks 6.13. The suite installs and runs there, but a few Plasma internals introduced in 6.4+ are missing, so the desktop folder view falls back to a compatibility mode (KRunner type-ahead search stays disabled). `install.sh` installs the distribution's split KDE QML module packages automatically — without them the custom widgets cannot load at all.
+
 ---
 
 ## 🔰 New to Linux? Start Here
@@ -188,6 +191,17 @@ The uninstaller will:
 3. Remove user-space plasmoids, C++ libraries, themes, and icons.
 4. Restore your previous KDE configuration from `~/.config/doodlebookos-backups/latest`.
 5. Restart Plasma Shell to return you directly to your previous desktop.
+
+### Recovering a failed desktop load
+
+If Plasma reports **“an error occurred while loading DoodlebookOS Desktop”**, the desktop containment override could not be loaded by the installed Plasma version. From a terminal, drop the override and restart the shell:
+
+```bash
+rm -rf ~/.local/share/plasma/plasmoids/{org.kde.desktopcontainment,org.kde.plasma.folder,DoodlebookOS-Desktop}
+systemctl --user restart plasma-plasmashell
+```
+
+Your panels, widgets and settings are untouched; run `./install.sh` again after updating the repository, or `./uninstall.sh` to go back to your previous configuration.
 
 ---
 

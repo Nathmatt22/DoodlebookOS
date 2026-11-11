@@ -56,7 +56,18 @@ ContainmentItem {
     property bool inPanel: (Plasmoid.location !== PlasmaCore.Types.Floating)
     property bool useListViewMode: inPanel && Plasmoid.configuration.viewMode === 0
 
-    property bool isUiReady: Plasmoid.containment.corona.isScreenUiReady(root.screen)
+    // Corona.isScreenUiReady() was added in Plasma 6.4. Calling it unconditionally throws on
+    // older Plasma (Debian 13 ships 6.3.6) and would leave the folder view inactive forever,
+    // so older releases simply treat the screen as ready.
+    function screenUiReady(screen: int): bool {
+        const corona = Plasmoid.containment?.corona;
+        if (corona && typeof corona.isScreenUiReady === "function") {
+            return corona.isScreenUiReady(screen);
+        }
+        return true;
+    }
+
+    property bool isUiReady: screenUiReady(root.screen)
 
     readonly property int hoverActivateDelay: 750 // Magic number that matches Dolphin's auto-expand folders delay.
 
@@ -69,7 +80,7 @@ ContainmentItem {
     toolTipSubText: ""
     Plasmoid.icon: (!Plasmoid.configuration.useCustomIcon && folderViewLayer.ready) ? symbolicizeIconName(folderViewLayer.view?.model.iconName) : Plasmoid.configuration.icon
 
-    onScreenChanged: isUiReady = Plasmoid.containment.corona.isScreenUiReady(root.screen)
+    onScreenChanged: isUiReady = screenUiReady(root.screen)
 
     // We want to do this here rather than in the model because we don't always want
     // symbolic icons everywhere, but we do know that we always want them in this

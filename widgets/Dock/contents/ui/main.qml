@@ -8,8 +8,7 @@ import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.taskmanager as TaskManager
-import org.kde.plasma.private.kicker 0.1 as Kicker
-import org.kde.plasma.workspace.dbus 1.0 as DBus
+import org.kde.plasma.private.kicker as Kicker
 
 PlasmoidItem {
     id: kicker
@@ -193,31 +192,17 @@ PlasmoidItem {
         panelHeight: kicker.compactRepItem ? kicker.compactRepItem.effectiveHeight : 52
     }
 
-    DBus.Properties {
-        id: krunnerBridge
-        busType: DBus.BusType.Session
-        service: "org.kde.krunner"
-        path: "/App"
-        iface: "org.kde.krunner.App"
+    // DBus.Properties only exists in Plasma 6.8+. The bridge is loaded from its own file so
+    // that older Plasma releases keep the dock usable instead of failing to load at all.
+    Loader {
+        id: krunnerBridgeLoader
 
-        property int lastTriggerCount: -1
+        source: "KRunnerBridge.qml"
+        asynchronous: false
 
-        onPropertiesChanged: (iface, changed, invalidated) => {
-            if (changed && typeof changed.triggerCount !== "undefined") {
-                var count = Number(changed.triggerCount);
-                if (lastTriggerCount === -1) {
-                    lastTriggerCount = count;
-                    return;
-                }
-                if (count > lastTriggerCount) {
-                    lastTriggerCount = count;
-                    var q = (changed.queryText !== undefined) ? changed.queryText.toString() : "";
-                    if (q.length > 0) {
-                        launcherPopup.openWithQuery(q);
-                    } else {
-                        launcherPopup.toggle();
-                    }
-                }
+        onLoaded: {
+            if (item) {
+                item.launcherPopup = launcherPopup;
             }
         }
     }

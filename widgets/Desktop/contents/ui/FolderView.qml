@@ -49,7 +49,9 @@ FocusScope {
     property alias filterPattern: dir.filterPattern
     property alias filterMimeTypes: dir.filterMimeTypes
     property alias showHiddenFiles: dir.showHiddenFiles
-    property alias creatingNewItems: dir.creatingNewItems
+    // FolderModel.creatingNewItems only exists in Plasma 6.8+, so it cannot be aliased
+    // directly: older releases (Debian 13 ships 6.3.6) fail the whole file otherwise.
+    property bool creatingNewItems: false
     property alias flow: gridView.flow
     property alias layoutDirection: gridView.layoutDirection
     property alias cellWidth: gridView.cellWidth
@@ -83,6 +85,26 @@ FocusScope {
         } catch (e) {
             // Plasma < 6.4: no KRunner probe available, keep type-ahead search off.
             krunnerProbe = null;
+        }
+
+        try {
+            if (typeof dir.creatingNewItems === "boolean") {
+                main.creatingNewItems = dir.creatingNewItems;
+            }
+        } catch (e) {
+            // Plasma < 6.8: FolderModel.creatingNewItems does not exist.
+        }
+    }
+
+    Connections {
+        target: dir
+        ignoreUnknownSignals: true
+
+        function onCreatingNewItemsChanged() {
+            const creating = dir.creatingNewItems;
+            if (typeof creating === "boolean") {
+                main.creatingNewItems = creating;
+            }
         }
     }
 
@@ -300,7 +322,7 @@ FocusScope {
                 if (mouse.buttons & Qt.RightButton) {
                     clearPressState();
 
-                    if (!dir.creatingNewItems) {
+                    if (!main.creatingNewItems) {
                         mouse.accepted = true;
                         var container = doodlebookContextMenu.parent || main;
                         var pt = container ? mapToItem(container, mouse.x, mouse.y) : Qt.point(mouse.x, mouse.y);

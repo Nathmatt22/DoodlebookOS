@@ -27,7 +27,17 @@ PlasmaCore.Dialog {
     // FavoriteItem.performDrag() drives this and closes the popup once the drag is over.
     property bool dragInProgress: false
     hideOnWindowDeactivate: !dragInProgress
-    onVisibleChanged: if (!visible) dragInProgress = false
+
+    // The dialog already has an onVisibleChanged handler, so clear the flag from a separate
+    // object instead of adding a second one (which is a duplicate property value error).
+    Connections {
+        target: root
+        function onVisibleChanged() {
+            if (!root.visible) {
+                root.dragInProgress = false;
+            }
+        }
+    }
 
     backgroundHints: PlasmaCore.Types.StandardBackground
 

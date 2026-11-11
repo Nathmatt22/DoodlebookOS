@@ -22,7 +22,12 @@ PlasmaCore.Dialog {
     visualParent: visualParentItem
     location: (typeof Plasmoid !== "undefined" && Plasmoid.location !== undefined) ? Plasmoid.location : PlasmaCore.Types.BottomEdge
     floating: 12
-    hideOnWindowDeactivate: true
+    // Keep the popup alive while an item is dragged out of it: destroying the window that
+    // owns the drag source mid-drag crashes plasmashell on Wayland (KDE bug 449426/488515).
+    // FavoriteItem.performDrag() drives this and closes the popup once the drag is over.
+    property bool dragInProgress: false
+    hideOnWindowDeactivate: !dragInProgress
+    onVisibleChanged: if (!visible) dragInProgress = false
 
     backgroundHints: PlasmaCore.Types.StandardBackground
 

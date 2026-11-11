@@ -108,6 +108,20 @@ Item {
   }
 
   function performDrag(handler) {
+    // Dragging towards the desktop makes the pointer leave the launcher popup, which used to
+    // close and destroy the window hosting the drag source: on Wayland that crashes
+    // plasmashell (KDE bug 449426/488515). Keep it alive while dragging, then close it the way
+    // hideOnWindowDeactivate would have once the gesture ends.
+    var launcher = (typeof kicker !== "undefined" && kicker) ? kicker.launcherPopup : null;
+    if (launcher) {
+      if (handler.active) {
+        launcher.dragInProgress = true;
+      } else if (launcher.dragInProgress) {
+        launcher.dragInProgress = false;
+        launcher.closeAnimated();
+      }
+    }
+
     if (!handler.active) {
       kicker.dragSource.Drag.active = false;
       kicker.dragSource.Drag.imageSource = "";
@@ -120,7 +134,9 @@ Item {
       }
       kicker.dragSource.sourceItem = favItem;
       kicker.dragSource.Drag.imageSource = result.url;
-      var dragUrl = favItem.launcherUrlStr || favItem.url;
+      // Qt serializes this to the compositor; a QUrl object instead of a string can break
+      // the Wayland data transfer, so normalize it.
+      var dragUrl = (favItem.launcherUrlStr || favItem.url || "").toString();
       kicker.dragSource.Drag.mimeData = {
         "text/uri-list" : [dragUrl]
       };

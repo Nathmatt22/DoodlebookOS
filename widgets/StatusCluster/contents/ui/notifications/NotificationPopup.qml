@@ -60,22 +60,33 @@ NotificationsApplet.NotificationWindow {
     width: mainItem.implicitWidth + leftPadding + rightPadding
 
     // Hide the rectangular theme frame drawn by PlasmaWindow behind our own rounded card
-    function hideFrameBackground() {
-        if (!notificationPopup.contentItem) {
+    function setFrameBackgroundVisible(frameVisible) {
+        const content = notificationPopup.contentItem;
+        if (!content) {
             return;
         }
-        const kids = notificationPopup.contentItem.children;
+        const kids = content.children;
         for (let i = 0; i < kids.length; ++i) {
             if (kids[i] !== notificationPopup.mainItem) {
-                kids[i].visible = false;
+                kids[i].visible = frameVisible;
             }
         }
+    }
+
+    function hideFrameBackground() {
+        setFrameBackgroundVisible(false);
     }
 
     Component.onCompleted: hideFrameBackground()
     onVisibleChanged: {
         if (visible) {
             hideFrameBackground();
+        } else {
+            // The dialog releases its compositor blur region, and the frame it derives the mask
+            // from, while hiding. That teardown does nothing while the frame is hidden, which
+            // left a blurred rectangle on the desktop after a notification until plasmashell
+            // was restarted. Hand the frame back once hidden; it is hidden again on next show.
+            setFrameBackgroundVisible(true);
         }
     }
 

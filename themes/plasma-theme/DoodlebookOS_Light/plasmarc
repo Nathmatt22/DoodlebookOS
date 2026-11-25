@@ -10,8 +10,13 @@ contrast=0.2
 intensity=1.0
 saturation=1.7
 
+# Plasma asks the compositor to blur what is behind its panels, dialogs and tooltips.
+# The dialogs' frames are opaque, and KWin kept the blurred backdrop of a Plasma dialog
+# on screen after it was hidden or destroyed (notification toasts, widget context menus),
+# leaving a blurred rectangle on the wallpaper until plasmashell restarted. Keep the
+# theme's surfaces ink-opaque and never request a blur region.
 [BlurBehindEffect]
-enabled=true
+enabled=false
 
 [AdaptiveTransparency]
 enabled=true

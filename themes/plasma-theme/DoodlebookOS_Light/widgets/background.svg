@@ -40,39 +40,39 @@
   <!-- ========================================== -->
 
   <!-- LEWY GÓRNY RÓG (topleft, promień 32px) -->
-  <path id="topleft" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <path id="topleft" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         d="M 32,0 C 14.327,0 0,14.327 0,32 V 32 H 32 Z" />
 
   <!-- GÓRA (top) -->
-  <rect id="top" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <rect id="top" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         x="32" y="0" width="80" height="32" />
 
   <!-- PRAWY GÓRNY RÓG (topright, promień 32px) -->
-  <path id="topright" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <path id="topright" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         d="M 112,0 C 129.673,0 144,14.327 144,32 H 112 Z" />
 
   <!-- LEWA KRAWĘDŹ (left) -->
-  <rect id="left" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <rect id="left" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         x="0" y="32" width="32" height="80" />
 
   <!-- ŚRODEK (center) -->
-  <rect id="center" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <rect id="center" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         x="32" y="32" width="80" height="80" />
 
   <!-- PRAWA KRAWĘDŹ (right) -->
-  <rect id="right" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <rect id="right" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         x="112" y="32" width="32" height="80" />
 
   <!-- LEWY DOLNY RÓG (bottomleft, promień 32px) -->
-  <path id="bottomleft" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <path id="bottomleft" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         d="M 0,112 C 0,129.673 14.327,144 32,144 V 112 Z" />
 
   <!-- DÓŁ (bottom) -->
-  <rect id="bottom" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <rect id="bottom" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         x="32" y="112" width="80" height="32" />
 
   <!-- PRAWY DOLNY RÓG (bottomright, promień 32px) -->
-  <path id="bottomright" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+  <path id="bottomright" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
         d="M 144,112 C 144,129.673 129.673,144 112,144 V 112 Z" />
 
   <!-- MARGINESY BEZPIECZEŃSTWA (hint-*-margin) = 16px -->

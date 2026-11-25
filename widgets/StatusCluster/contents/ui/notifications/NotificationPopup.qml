@@ -81,12 +81,6 @@ NotificationsApplet.NotificationWindow {
     onVisibleChanged: {
         if (visible) {
             hideFrameBackground();
-        } else {
-            // The dialog releases its compositor blur region, and the frame it derives the mask
-            // from, while hiding. That teardown does nothing while the frame is hidden, which
-            // left a blurred rectangle on the desktop after a notification until plasmashell
-            // was restarted. Hand the frame back once hidden; it is hidden again on next show.
-            setFrameBackgroundVisible(true);
         }
     }
 

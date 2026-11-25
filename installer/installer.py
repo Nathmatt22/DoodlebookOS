@@ -646,16 +646,39 @@ class InstallWorker(QThread):
                     qml_file.write_text(text.replace(old, new), encoding="utf-8")
                     self.log(f"[i] Notifications popup: import adapted to {new.split()[1]}")
 
-            def copy_plasmoid_if_not_symlink(src_p: Path, dst_p: Path):
-                if dst_p.is_symlink() and dst_p.resolve().exists():
+            def plasmoid_package_ok(p: Path) -> bool:
+                # KPackage resolves a plasmoid through metadata.json plus its contents
+                # directory. A copy interrupted mid-way (or a symlink into a checkout that
+                # was moved away) leaves a directory Plasma then reports as
+                # "the package <id> does not exist".
+                return (p / "metadata.json").is_file() and (p / "contents").is_dir()
+
+            def copy_plasmoid_if_not_symlink(src_p: Path, dst_p: Path) -> bool:
+                if dst_p.is_symlink() and dst_p.resolve().exists() and plasmoid_package_ok(dst_p):
                     self.log(f"[i] Keeping existing symlinked widget: {dst_p}")
-                    return
+                    return True
                 if dst_p.exists() or dst_p.is_symlink():
                     if dst_p.is_symlink() or dst_p.is_file():
                         dst_p.unlink()
                     else:
                         shutil.rmtree(dst_p)
-                shutil.copytree(src_p, dst_p, symlinks=True)
+                for _attempt in (1, 2):
+                    try:
+                        shutil.copytree(src_p, dst_p, symlinks=True)
+                    except Exception as exc:
+                        self.log(f"[!] Cannot copy {src_p.name} to {dst_p}: {exc}")
+                    if plasmoid_package_ok(dst_p):
+                        return True
+                    # Retry once from a clean destination instead of leaving a half copy
+                    # that Plasma refuses to load and that the desktop layout then keeps
+                    # re-adding as a broken applet.
+                    if dst_p.exists():
+                        shutil.rmtree(dst_p, ignore_errors=True)
+                self.log(
+                    f"[!] Widget package {dst_p.name} is incomplete (no metadata.json): "
+                    "Plasma will report it as missing."
+                )
+                return False
 
             copy_plasmoid_if_not_symlink(
                 self.repo_dir / "widgets" / "Dock",
@@ -689,21 +712,21 @@ class InstallWorker(QThread):
             create_alias_symlink(plasmoids_dir / "org.kde.plasma.folder", plasmoids_dir / "org.kde.desktopcontainment")
             create_alias_symlink(plasmoids_dir / "DoodlebookOS-Desktop", plasmoids_dir / "org.kde.desktopcontainment")
 
-            copy_plasmoid_if_not_symlink(
+            appgroup_ok = copy_plasmoid_if_not_symlink(
                 self.repo_dir / "widgets" / "AppGroup",
                 plasmoids_dir / "org.doodlebookos.appgroup",
             )
             create_alias_symlink(plasmoids_dir / "org.doodlebookos.folder", plasmoids_dir / "org.doodlebookos.appgroup")
             create_alias_symlink(plasmoids_dir / "DoodlebookOS-Folder", plasmoids_dir / "org.doodlebookos.appgroup")
 
-            copy_plasmoid_if_not_symlink(
+            clock_ok = copy_plasmoid_if_not_symlink(
                 self.repo_dir / "widgets" / "Clock",
                 plasmoids_dir / "org.doodlebookos.clock",
             )
             create_alias_symlink(plasmoids_dir / "local.pixelclock", plasmoids_dir / "org.doodlebookos.clock")
             create_alias_symlink(plasmoids_dir / "DoodlebookOS-Clock", plasmoids_dir / "org.doodlebookos.clock")
 
-            copy_plasmoid_if_not_symlink(
+            weather_ok = copy_plasmoid_if_not_symlink(
                 self.repo_dir / "widgets" / "Weather",
                 plasmoids_dir / "org.doodlebookos.weather",
             )
@@ -787,6 +810,11 @@ class InstallWorker(QThread):
                 esc_launchers = json.dumps(saved_launchers)
                 esc_wp = json.dumps(f"file://{wallpaper_dest}") if (self.opt_wallpaper and wallpaper_dest and wallpaper_dest.exists()) else '""'
                 set_meta_str = "true" if self.opt_qol else "false"
+                # Never re-add a desktop widget whose package failed to install: the
+                # applet would load as "package does not exist" until it is removed again.
+                clock_available = "true" if clock_ok else "false"
+                weather_available = "true" if weather_ok else "false"
+                appgroup_available = "true" if appgroup_ok else "false"
                 default_apps_json = json.dumps(json.dumps([
                     {"name": "Dolphin", "icon": "system-file-manager", "exec": "dolphin"},
                     {"name": "Konsole", "icon": "utilities-terminal", "exec": "konsole"},
@@ -851,13 +879,13 @@ class InstallWorker(QThread):
                             }}
                         }}
                     }}
-                    if (!hasClock) {{
+                    if (!hasClock && {clock_available}) {{
                         desk.addWidget("org.doodlebookos.clock", glanceX, topOffset + 16, 220, 220);
                     }}
-                    if (!hasWeather) {{
+                    if (!hasWeather && {weather_available}) {{
                         desk.addWidget("org.doodlebookos.weather", glanceX, topOffset + 252, 220, 220);
                     }}
-                    if (existingAppGroups === 0) {{
+                    if (existingAppGroups === 0 && {appgroup_available}) {{
                         var colX = Math.round(sW - 130);
                         var fObj = desk.addWidget("org.doodlebookos.appgroup", colX, topOffset + 16, 90, 100);
                         if (fObj) {{

@@ -990,12 +990,16 @@ class InstallWorker(QThread):
             # 6d. System Fonts (Google Sans Flex)
             if self.opt_fonts and shutil.which("kwriteconfig6"):
                 self.log("[i] Setting Google Sans Flex as the system font in all KDE sections...")
+                # QFont::fromString rejects a description with more than 17 fields, so the
+                # last two values Qt's own toString() adds cannot be written here: keeping
+                # them made Qt log "Invalid description 'Google Sans Flex,...'" and drop the
+                # font. The stored value must stop at the style strategy field.
                 for key, val in [
-                    ("font", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0"),
-                    ("menuFont", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0"),
-                    ("smallestReadableFont", "Google Sans Flex,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0"),
-                    ("toolBarFont", "Google Sans Flex,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0"),
-                    ("wmFont", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0"),
+                    ("font", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"),
+                    ("menuFont", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"),
+                    ("smallestReadableFont", "Google Sans Flex,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"),
+                    ("toolBarFont", "Google Sans Flex,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"),
+                    ("wmFont", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"),
                     ("XftAntialias", "true"),
                     ("XftHintStyle", "hintslight"),
                     ("XftSubPixel", "rgb"),
@@ -1003,7 +1007,7 @@ class InstallWorker(QThread):
                     self.run_cmd(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", key, val])
                 self.run_cmd([
                     "kwriteconfig6", "--file", "kdeglobals", "--group", "WM",
-                    "--key", "activeFont", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0"
+                    "--key", "activeFont", "Google Sans Flex,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
                 ])
                 if shutil.which("dbus-send"):
                     self.run_cmd([

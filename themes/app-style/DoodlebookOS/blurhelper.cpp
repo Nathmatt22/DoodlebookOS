@@ -87,6 +87,15 @@ void BlurHelper::update(QWidget *widget) const
 
     widget->winId(); // force creation of the window handle
 
+    // A window that is no longer on screen must drop its blur region. The style used to
+    // re-enable blur behind on every Hide event, so a window that vanished (a passive
+    // popup, a menu, a dialog) kept the compositor blurring the wallpaper underneath it:
+    // a blurred rectangle stayed on the desktop until the session was restarted.
+    if (!widget->isVisible()) {
+        KWindowEffects::enableBlurBehind(widget->windowHandle(), false);
+        return;
+    }
+
     QRegion region;
     if (const auto menu = qobject_cast<QMenu *>(widget)) {
         region = _helper->menuFrameRegion(menu);
@@ -94,8 +103,6 @@ void BlurHelper::update(QWidget *widget) const
     KWindowEffects::enableBlurBehind(widget->windowHandle(), true, region);
 
     // force update
-    if (widget->isVisible()) {
-        widget->update();
-    }
+    widget->update();
 }
 }

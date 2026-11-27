@@ -655,8 +655,19 @@ class InstallWorker(QThread):
 
             def copy_plasmoid_if_not_symlink(src_p: Path, dst_p: Path) -> bool:
                 if dst_p.is_symlink() and dst_p.resolve().exists() and plasmoid_package_ok(dst_p):
-                    self.log(f"[i] Keeping existing symlinked widget: {dst_p}")
-                    return True
+                    # A link aimed straight at this checkout's widget always serves the
+                    # current code, so it can be kept. A link into another (older) clone
+                    # looks like a valid package forever and silently pins stale QML:
+                    # that is how an outdated FolderView.qml survives every reinstall and
+                    # keeps Plasma 6.3 reporting "Type FolderView unavailable".
+                    try:
+                        points_to_this_checkout = dst_p.resolve().samefile(src_p.resolve())
+                    except OSError:
+                        points_to_this_checkout = False
+                    if points_to_this_checkout:
+                        self.log(f"[i] Keeping existing symlinked widget: {dst_p}")
+                        return True
+                    self.log(f"[i] Replacing outdated symlinked widget with a fresh copy: {dst_p}")
                 if dst_p.exists() or dst_p.is_symlink():
                     if dst_p.is_symlink() or dst_p.is_file():
                         dst_p.unlink()
@@ -705,12 +716,20 @@ class InstallWorker(QThread):
             )
             create_alias_symlink(plasmoids_dir / "DoodlebookOS-PanelSpacer", plasmoids_dir / "org.doodlebookos.panelspacer")
 
-            copy_plasmoid_if_not_symlink(
+            desktop_ok = copy_plasmoid_if_not_symlink(
                 self.repo_dir / "widgets" / "Desktop",
                 plasmoids_dir / "org.kde.desktopcontainment",
             )
             create_alias_symlink(plasmoids_dir / "org.kde.plasma.folder", plasmoids_dir / "org.kde.desktopcontainment")
             create_alias_symlink(plasmoids_dir / "DoodlebookOS-Desktop", plasmoids_dir / "org.kde.desktopcontainment")
+            if not desktop_ok:
+                # Plasma keeps loading whatever package is already there, so a failed
+                # refresh leaves the previous QML in place and the desktop errors again.
+                self.log(
+                    "[!] The desktop containment could not be refreshed, Plasma will keep "
+                    "loading the old copy. Remove it and run the installer again:"
+                )
+                self.log(f"    rm -rf {plasmoids_dir / 'org.kde.desktopcontainment'}")
 
             appgroup_ok = copy_plasmoid_if_not_symlink(
                 self.repo_dir / "widgets" / "AppGroup",
